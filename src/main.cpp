@@ -45,8 +45,6 @@
 //Variáveis de bibliotecas
 Adafruit_BMP280 bmp;
 File arquivoLog;
-
-
 char nomeBase[] = "dataLog";
 char nomeConcat[12];
 
@@ -59,7 +57,6 @@ unsigned long millisRec = 1000000;
 int n = 0;
 int o =  0;
 
-
 //Variáveis de dados
 //int32_t pressaoAtual;
 float   alturaAtual;
@@ -71,7 +68,7 @@ float temperatura;
 float temperaturaAtual;
 String stringDados;
 
-//variáveis de control
+//variáveis de controle
 bool gravando = false;
 bool  abriuParaquedas = false;
 char    erro = false;
@@ -81,27 +78,6 @@ bool descendo = false;
 bool subiu = false;
 
 //Arrays de som de erro;
-
-void setup() {
-
-#ifdef DEBUG
-  Serial.begin(115200);
-#endif
-
-#ifdef DEBUG_TEMP
-  Serial.begin(115200);
-
-#endif
-  //Faz o setup inicial dos sensores de movimento e altura assim
-  //como as portas
-
-#ifdef DEBUG
-  Serial.println("Iniciando o altímetro");
-#endif
-
-  inicializa();
-
-}
 
 void inicializa() {
 
@@ -132,7 +108,6 @@ void inicializa() {
   alturaInicial =  bmp.readAltitude(PRESSAO_MAR);
   alturaMinima = alturaInicial;
 
-
   //inicializar o cartão SD
   if (!SD.begin(PINO_SD_CS)) {
 
@@ -143,7 +118,6 @@ void inicializa() {
   else if (!erro) {
     int n = 1;
     bool parar = false;
-
 
     while (!parar)
     {
@@ -162,9 +136,7 @@ void inicializa() {
     Serial.print("Salvando os dados no arquivo ");
     Serial.println(nomeConcat);
 #endif
-
   }
-
 
   if (!erro) {
 #ifdef DEBUG
@@ -183,85 +155,26 @@ void inicializa() {
     atualizaMillis = millis();
   }
 
-
 }
 
-void loop() {
+void setup() {
 
-  //Recebendo o tempo atual de maneira a ter uma base de tempo
-  //para uma taxa de atualização
-  millisAtual = millis();
+#ifdef DEBUG
+  Serial.begin(115200);
+#endif
 
-  if ((millis() - millisRec >= TEMPO_RELE) && abriuParaquedas){
-    digitalWrite(REC_PRINCIPAL, LOW); //COMENTAR LINHA CASO NÃO FOR NECESSÁRIO
-    digitalWrite(REC_SECUNDARIO, HIGH);
-  }
-
-  if ((millisAtual - atualizaMillis) >= TEMPO_ATUALIZACAO) {
 #ifdef DEBUG_TEMP
-    Serial.print("Status atual:");
-    Serial.println(statusAtual);
-    Serial.print("estado atual de erro:");
-    Serial.println(erro);
+  Serial.begin(115200);
+
 #endif
-    //verifica se existem erros e mantém tentando inicializar
-    if (erro) {
-      inicializa();
-      notifica(erro);
-    }
-
-    //Se não existem erros no sistema relacionados a inicialização
-    //dos dispositivos, fazer:
-
-    if (!erro) {
+  //Faz o setup inicial dos sensores de movimento e altura assim
+  //como as portas
 
 #ifdef DEBUG
-      Serial.println("Rodando o loop de funções");
+  Serial.println("Iniciando o altímetro");
 #endif
 
-      //Verifica os botões e trata o clique simples e o clique longo
-      //como controle de início/fim da gravação.
-      leBotoes();
-
-#ifdef DEBUG
-      Serial.println("Li os botões");
-#endif
-
-      //Recebe os dados dos sensores e os deixa salvo em variáveis
-      adquireDados();
-#ifdef DEBUG
-      Serial.println("Adquiri os dados");
-#endif
-
-      //Trata os dados, fazendo filtragens e ajustes.
-      
-#ifdef DEBUG
-      Serial.println("Tratei os dados");
-#endif
-
-      //Se a gravação estiver ligada, grava os dados.
-      gravaDados();
-#ifdef DEBUG
-      Serial.println("Gravei os dados");
-#endif
-
-      //De acordo com os dados recebidos, verifica condições como a
-      //altura máxima atingida e seta variáveis de controle de modo
-      //que ações consequintes sejam tomadas.
-      checaCondicoes();
-
-      //Faz ajustes finais necessários
-      finaliza();
-
-      //Caso o voo tenha chegado ao ápice, libera o sistema de recuperação
-      recupera();
-    }
-
-    //Notifica via LEDs e buzzer problemas com o foguete
-    notifica(statusAtual);
-
-    atualizaMillis = millisAtual;
-  }
+  inicializa();
 
 }
 
@@ -318,7 +231,6 @@ void gravaDados() {
     arquivoLog.close();
   }
 
-
 }
 
 void checaCondicoes() {
@@ -361,6 +273,16 @@ void checaCondicoes() {
 void finaliza() {
 }
 
+void abreParaquedas() {
+#ifdef DEBUG
+  Serial.println("Abrindo o paraquedas!");
+#endif
+  digitalWrite(REC_PRINCIPAL, HIGH);
+  millisRec = millis();
+  abriuParaquedas = 1;
+
+}
+
 void recupera () {
 
   //verifica aqui se o foguete já atingiu o apogeu e se está descendo pelas
@@ -371,7 +293,6 @@ void recupera () {
     abreParaquedas();
 
   }
-
 
 }
 
@@ -486,9 +407,7 @@ void notifica (char codigo) {
         millisLed = millisAtual;
       }
 
-
       break;
-
 
   }
 
@@ -512,13 +431,81 @@ void notifica (char codigo) {
 
 #endif
 
+void loop() {
 
-void abreParaquedas() {
-#ifdef DEBUG
-  Serial.println("Abrindo o paraquedas!");
+  //Recebendo o tempo atual de maneira a ter uma base de tempo
+  //para uma taxa de atualização
+  millisAtual = millis();
+
+  if ((millis() - millisRec >= TEMPO_RELE) && abriuParaquedas){
+    digitalWrite(REC_PRINCIPAL, LOW); //COMENTAR LINHA CASO NÃO FOR NECESSÁRIO
+    digitalWrite(REC_SECUNDARIO, HIGH);
+  }
+
+  if ((millisAtual - atualizaMillis) >= TEMPO_ATUALIZACAO) {
+#ifdef DEBUG_TEMP
+    Serial.print("Status atual:");
+    Serial.println(statusAtual);
+    Serial.print("estado atual de erro:");
+    Serial.println(erro);
 #endif
-  digitalWrite(REC_PRINCIPAL, HIGH);
-  millisRec = millis();
-  abriuParaquedas = 1;
+    //verifica se existem erros e mantém tentando inicializar
+    if (erro) {
+      inicializa();
+      notifica(erro);
+    }
+
+    //Se não existem erros no sistema relacionados a inicialização
+    //dos dispositivos, fazer:
+
+    if (!erro) {
+
+#ifdef DEBUG
+      Serial.println("Rodando o loop de funções");
+#endif
+
+      //Verifica os botões e trata o clique simples e o clique longo
+      //como controle de início/fim da gravação.
+      leBotoes();
+
+#ifdef DEBUG
+      Serial.println("Li os botões");
+#endif
+
+      //Recebe os dados dos sensores e os deixa salvo em variáveis
+      adquireDados();
+#ifdef DEBUG
+      Serial.println("Adquiri os dados");
+#endif
+
+      //Trata os dados, fazendo filtragens e ajustes.
+      
+#ifdef DEBUG
+      Serial.println("Tratei os dados");
+#endif
+
+      //Se a gravação estiver ligada, grava os dados.
+      gravaDados();
+#ifdef DEBUG
+      Serial.println("Gravei os dados");
+#endif
+
+      //De acordo com os dados recebidos, verifica condições como a
+      //altura máxima atingida e seta variáveis de controle de modo
+      //que ações consequintes sejam tomadas.
+      checaCondicoes();
+
+      //Faz ajustes finais necessários
+      finaliza();
+
+      //Caso o voo tenha chegado ao ápice, libera o sistema de recuperação
+      recupera();
+    }
+
+    //Notifica via LEDs e buzzer problemas com o foguete
+    notifica(statusAtual);
+
+    atualizaMillis = millisAtual;
+  }
 
 }
