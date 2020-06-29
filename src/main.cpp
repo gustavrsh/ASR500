@@ -19,7 +19,7 @@
 
 #define TEMPO_RELE 1000
 #define TEMPO_ATUALIZACAO 50 //em milisegundos
-#define THRESHOLD_DESCIDA 10   //em metros
+#define THRESHOLD_DESCIDA 10 //em metros
 #define THRESHOLD_SUBIDA 10  //em metros
 
 //Definições de input
@@ -49,20 +49,20 @@ char nomeBase[] = "dataLog";
 char nomeConcat[12];
 
 //Variáveis de timing
-unsigned long millisAtual   = 0;
+unsigned long millisAtual = 0;
 unsigned long atualizaMillis = 0;
-unsigned long millisLed   = 0;
-unsigned long millisGravacao  = 0;
+unsigned long millisLed = 0;
+unsigned long millisGravacao = 0;
 unsigned long millisRec = 1000000;
 int n = 0;
-int o =  0;
+int o = 0;
 
 //Variáveis de dados
 //int32_t pressaoAtual;
-float   alturaAtual;
-float   alturaInicial;
-float   alturaMinima;
-float   alturaMaxima =  0;
+float alturaAtual;
+float alturaInicial;
+float alturaMinima;
+float alturaMaxima = 0;
 float pressaoAtual;
 float temperatura;
 float temperaturaAtual;
@@ -70,16 +70,17 @@ String stringDados;
 
 //variáveis de controle
 bool gravando = false;
-bool  abriuParaquedas = false;
-char    erro = false;
-char  statusAtual;
+bool abriuParaquedas = false;
+char erro = false;
+char statusAtual;
 bool estado;
 bool descendo = false;
 bool subiu = false;
 
 //Arrays de som de erro;
 
-void inicializa() {
+void inicializa()
+{
 
   //Inicializando as portas
   pinMode(PINO_BOTAO, INPUT);
@@ -96,7 +97,8 @@ void inicializa() {
   erro = 0;
 
   //Inicializando o Altímetro
-  if (!bmp.begin(0x76)) {
+  if (!bmp.begin(0x76))
+  {
     erro = ERRO_BMP;
   }
   bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
@@ -105,17 +107,19 @@ void inicializa() {
                   Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
 
-  alturaInicial =  bmp.readAltitude(PRESSAO_MAR);
+  alturaInicial = bmp.readAltitude(PRESSAO_MAR);
   alturaMinima = alturaInicial;
 
   //inicializar o cartão SD
-  if (!SD.begin(PINO_SD_CS)) {
+  if (!SD.begin(PINO_SD_CS))
+  {
 
     erro = ERRO_SD;
 
     return;
   }
-  else if (!erro) {
+  else if (!erro)
+  {
     int n = 1;
     bool parar = false;
 
@@ -138,14 +142,16 @@ void inicializa() {
 #endif
   }
 
-  if (!erro) {
+  if (!erro)
+  {
 #ifdef DEBUG
     Serial.println("Nenhum erro iniciando dispositivos, começando o loop do main");
 #endif
     statusAtual = ESTADO_ESPERA;
   }
 
-  else {
+  else
+  {
 #ifdef DEBUG
     Serial.print("Altímetro com erro de inicialização código:");
     Serial.println(erro);
@@ -154,10 +160,10 @@ void inicializa() {
 
     atualizaMillis = millis();
   }
-
 }
 
-void setup() {
+void setup()
+{
 
 #ifdef DEBUG
   Serial.begin(115200);
@@ -175,38 +181,39 @@ void setup() {
 #endif
 
   inicializa();
-
 }
 
-void leBotoes() {
+void leBotoes()
+{
 
   millisAtual = millis();
   estado = digitalRead(PINO_BOTAO);
 
   //Liga a gravação se em espera
-  if (estado && (statusAtual == ESTADO_ESPERA)) {
+  if (estado && (statusAtual == ESTADO_ESPERA))
+  {
     statusAtual = ESTADO_GRAVANDO;
-
-
   }
 }
 
-void adquireDados() {
+void adquireDados()
+{
 
   //todas as medidas são feitas aqui em sequeência de maneira que os valores
   //sejam temporalmente próximos
   pressaoAtual = bmp.readPressure();
   alturaAtual = bmp.readAltitude(PRESSAO_MAR);
   temperaturaAtual = bmp.readTemperature();
-
 }
 
-void gravaDados() {
+void gravaDados()
+{
 
   //verifica aqui o estado do foguete e também se o arquivo está aberto e pronto
   //para ser usado. Aqui, todos os dados são concatenados em uma string que dá
   //o formato das linhas do arquivo de log.
-  if ((statusAtual == ESTADO_GRAVANDO) || (statusAtual == ESTADO_RECUPERANDO)) {
+  if ((statusAtual == ESTADO_GRAVANDO) || (statusAtual == ESTADO_RECUPERANDO))
+  {
     arquivoLog = SD.open(nomeConcat, FILE_WRITE);
     //  #ifdef DEBUG_TEMP
     //  Serial.println("Estou gravando!");
@@ -226,16 +233,16 @@ void gravaDados() {
     stringDados += ",";
     stringDados += temperaturaAtual;
 
-
     arquivoLog.println(stringDados);
     arquivoLog.close();
   }
-
 }
 
-void checaCondicoes() {
+void checaCondicoes()
+{
 
-  if ((statusAtual == ESTADO_GRAVANDO) && !gravando ) {
+  if ((statusAtual == ESTADO_GRAVANDO) && !gravando)
+  {
     alturaMinima = alturaAtual;
     gravando = true;
   }
@@ -249,7 +256,7 @@ void checaCondicoes() {
     alturaMaxima = 0;
 
   //controle de subida
-  if ((alturaAtual > alturaMinima + THRESHOLD_SUBIDA) && (statusAtual == ESTADO_GRAVANDO) && !subiu )
+  if ((alturaAtual > alturaMinima + THRESHOLD_SUBIDA) && (statusAtual == ESTADO_GRAVANDO) && !subiu)
     subiu = true;
 
   //primeira referencia de altura maxima
@@ -258,45 +265,47 @@ void checaCondicoes() {
 
   //verificar a altura máxima
   if ((alturaAtual > alturaMaxima) && (statusAtual == ESTADO_GRAVANDO) && subiu)
-    alturaMaxima =  alturaAtual;
+    alturaMaxima = alturaAtual;
 
   //Controle de descida, usando um threshold para evitar disparos não
   //intencionais
-  if ((alturaAtual + THRESHOLD_DESCIDA < alturaMaxima) && (statusAtual == ESTADO_GRAVANDO) && subiu) {
+  if ((alturaAtual + THRESHOLD_DESCIDA < alturaMaxima) && (statusAtual == ESTADO_GRAVANDO) && subiu)
+  {
     descendo = true;
     subiu = false;
     statusAtual = ESTADO_RECUPERANDO;
   }
-
 }
 
-void finaliza() {
+void finaliza()
+{
 }
 
-void abreParaquedas() {
+void abreParaquedas()
+{
 #ifdef DEBUG
   Serial.println("Abrindo o paraquedas!");
 #endif
   digitalWrite(REC_PRINCIPAL, HIGH);
   millisRec = millis();
   abriuParaquedas = 1;
-
 }
 
-void recupera () {
+void recupera()
+{
 
   //verifica aqui se o foguete já atingiu o apogeu e se está descendo pelas
   //suas variáveis globais de controle e chama a função que faz o acionamento
   //do paraquedas
-  if (descendo && !abriuParaquedas) {
+  if (descendo && !abriuParaquedas)
+  {
 
     abreParaquedas();
-
   }
-
 }
 
-void notifica (char codigo) {
+void notifica(char codigo)
+{
 
   unsigned int frequencia[10];
   //os tons aqui são tocados por um vetor que contem as frequências. Cada
@@ -307,142 +316,150 @@ void notifica (char codigo) {
   Serial.println(codigo);
 #endif
 
-  switch (codigo) {
+  switch (codigo)
+  {
 
-    //Problema com o BMP280
-    //Ambos os leds piscando juntos + tom de erro
-    case ERRO_BMP:
+  //Problema com o BMP280
+  //Ambos os leds piscando juntos + tom de erro
+  case ERRO_BMP:
 
-      frequencia[0] = 261;
-      frequencia[1] = 261;
-      frequencia[2] = 0;
-      frequencia[3] = 0;
-      frequencia[4] = 220;
-      frequencia[5] = 220;
-      frequencia[6] = 0;
-      frequencia[7] = 0;
-      frequencia[8] = 196;
-      frequencia[9] = 196;
-      if (millisAtual - millisLed > 100) {
-        digitalWrite(PINO_LED_AZUL, !digitalRead(PINO_LED_AZUL));
-        digitalWrite(PINO_LED_VERD, LOW);
-        digitalWrite(PINO_LED_VERM, LOW);
-        millisLed = millisAtual;
-      }
+    frequencia[0] = 261;
+    frequencia[1] = 261;
+    frequencia[2] = 0;
+    frequencia[3] = 0;
+    frequencia[4] = 220;
+    frequencia[5] = 220;
+    frequencia[6] = 0;
+    frequencia[7] = 0;
+    frequencia[8] = 196;
+    frequencia[9] = 196;
+    if (millisAtual - millisLed > 100)
+    {
+      digitalWrite(PINO_LED_AZUL, !digitalRead(PINO_LED_AZUL));
+      digitalWrite(PINO_LED_VERD, LOW);
+      digitalWrite(PINO_LED_VERM, LOW);
+      millisLed = millisAtual;
+    }
 
-      break;
+    break;
 
+  //Problema com o SD
+  //led vermelho piscando junto com o tom de erro
+  case ERRO_SD:
 
-    //Problema com o SD
-    //led vermelho piscando junto com o tom de erro
-    case ERRO_SD:
+    frequencia[0] = 261;
+    frequencia[1] = 261;
+    frequencia[2] = 0;
+    frequencia[3] = 0;
+    frequencia[4] = 220;
+    frequencia[5] = 220;
+    frequencia[6] = 0;
+    frequencia[7] = 0;
+    frequencia[8] = 196;
+    frequencia[9] = 196;
+    if (millisAtual - millisLed > 100)
+    {
+      digitalWrite(PINO_LED_VERM, !digitalRead(PINO_LED_VERM));
+      millisLed = millisAtual;
+    }
 
-      frequencia[0] = 261;
-      frequencia[1] = 261;
-      frequencia[2] = 0;
-      frequencia[3] = 0;
-      frequencia[4] = 220;
-      frequencia[5] = 220;
-      frequencia[6] = 0;
-      frequencia[7] = 0;
-      frequencia[8] = 196;
-      frequencia[9] = 196;
-      if (millisAtual - millisLed > 100) {
-        digitalWrite(PINO_LED_VERM, !digitalRead(PINO_LED_VERM));
-        millisLed = millisAtual;
-      }
+    break;
 
-      break;
+  //Estado onde o voo já terminou e faz um tom de recuperação
+  //led verde pisca rápido também
+  case ESTADO_RECUPERANDO:
 
-    //Estado onde o voo já terminou e faz um tom de recuperação
-    //led verde pisca rápido também
-    case ESTADO_RECUPERANDO:
+    frequencia[0] = 4000;
+    frequencia[1] = 4500;
+    frequencia[2] = 4000;
+    frequencia[3] = 0;
+    frequencia[4] = 0;
+    frequencia[5] = 0;
+    frequencia[6] = 0;
+    frequencia[7] = 0;
+    frequencia[8] = 0;
+    frequencia[9] = 0;
+    if (millisAtual - millisLed > 100)
+    {
+      digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
+      digitalWrite(PINO_LED_AZUL, LOW);
+      digitalWrite(PINO_LED_VERM, LOW);
+      millisLed = millisAtual;
+    }
 
-      frequencia[0] = 4000;
-      frequencia[1] = 4500;
-      frequencia[2] = 4000;
-      frequencia[3] = 0;
-      frequencia[4] = 0;
-      frequencia[5] = 0;
-      frequencia[6] = 0;
-      frequencia[7] = 0;
-      frequencia[8] = 0;
-      frequencia[9] = 0;
-      if (millisAtual - millisLed > 100) {
-        digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
-        digitalWrite(PINO_LED_AZUL, LOW);
-        digitalWrite(PINO_LED_VERM, LOW);
-        millisLed = millisAtual;
-      }
+    break;
 
-      break;
+  //Gravando, pisca um led vermelho como uma câmera e também faz
+  //um tom simples.
+  case ESTADO_GRAVANDO:
 
-    //Gravando, pisca um led vermelho como uma câmera e também faz
-    //um tom simples.
-    case ESTADO_GRAVANDO:
+    frequencia[0] = 293;
+    frequencia[1] = 293;
+    frequencia[2] = 0;
+    frequencia[3] = 0;
+    frequencia[4] = 0;
+    frequencia[5] = 0;
+    frequencia[6] = 0;
+    frequencia[7] = 0;
+    frequencia[8] = 0;
+    frequencia[9] = 0;
+    if (millisAtual - millisLed > 100)
+    {
+      digitalWrite(PINO_LED_AZUL, !digitalRead(PINO_LED_AZUL));
+      digitalWrite(PINO_LED_VERD, LOW);
+      digitalWrite(PINO_LED_VERM, LOW);
+      millisLed = millisAtual;
+    }
 
-      frequencia[0] = 293;
-      frequencia[1] = 293;
-      frequencia[2] = 0;
-      frequencia[3] = 0;
-      frequencia[4] = 0;
-      frequencia[5] = 0;
-      frequencia[6] = 0;
-      frequencia[7] = 0;
-      frequencia[8] = 0;
-      frequencia[9] = 0;
-      if (millisAtual - millisLed > 100) {
-        digitalWrite(PINO_LED_AZUL, !digitalRead(PINO_LED_AZUL));
-        digitalWrite(PINO_LED_VERD, LOW);
-        digitalWrite(PINO_LED_VERM, LOW);
-        millisLed = millisAtual;
-      }
+    break;
 
-      break;
+  case ESTADO_ESPERA:
+    //led verde piscando devagar indicando espera
+    if (millisAtual - millisLed > 500)
+    {
+      digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
+      millisLed = millisAtual;
+    }
 
-    case ESTADO_ESPERA:
-      //led verde piscando devagar indicando espera
-      if (millisAtual - millisLed > 500) {
-        digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
-        millisLed = millisAtual;
-      }
-
-      break;
-
+    break;
   }
 
   //Lê o vetor de frequencias e toca a frequência na posição atual
   //voltando ao inicio do mesmo quando termina, assim tocando todos os tons
 
-  if (codigo) {
-    if (frequencia[o] && (statusAtual != ESTADO_ESPERA)) {
+  if (codigo)
+  {
+    if (frequencia[o] && (statusAtual != ESTADO_ESPERA))
+    {
       tone(PINO_BUZZER, frequencia[o], TEMPO_ATUALIZACAO);
     }
     o++;
     if (o > 9)
       o = 0;
-
   }
 }
 
 #ifdef DEBUG_TEMP
-  Serial.print("tocando a posição do vetor:");
-  Serial.println(o);
+Serial.print("tocando a posição do vetor:");
+Serial.println(o);
 
 #endif
 
-void loop() {
+void loop()
+{
 
   //Recebendo o tempo atual de maneira a ter uma base de tempo
   //para uma taxa de atualização
   millisAtual = millis();
 
-  if ((millis() - millisRec >= TEMPO_RELE) && abriuParaquedas){
+  if ((millis() - millisRec >= TEMPO_RELE) && abriuParaquedas)
+  {
     digitalWrite(REC_PRINCIPAL, LOW); //COMENTAR LINHA CASO NÃO FOR NECESSÁRIO
     digitalWrite(REC_SECUNDARIO, HIGH);
   }
 
-  if ((millisAtual - atualizaMillis) >= TEMPO_ATUALIZACAO) {
+  if ((millisAtual - atualizaMillis) >= TEMPO_ATUALIZACAO)
+  {
 #ifdef DEBUG_TEMP
     Serial.print("Status atual:");
     Serial.println(statusAtual);
@@ -450,7 +467,8 @@ void loop() {
     Serial.println(erro);
 #endif
     //verifica se existem erros e mantém tentando inicializar
-    if (erro) {
+    if (erro)
+    {
       inicializa();
       notifica(erro);
     }
@@ -458,7 +476,8 @@ void loop() {
     //Se não existem erros no sistema relacionados a inicialização
     //dos dispositivos, fazer:
 
-    if (!erro) {
+    if (!erro)
+    {
 
 #ifdef DEBUG
       Serial.println("Rodando o loop de funções");
@@ -479,7 +498,7 @@ void loop() {
 #endif
 
       //Trata os dados, fazendo filtragens e ajustes.
-      
+
 #ifdef DEBUG
       Serial.println("Tratei os dados");
 #endif
@@ -507,5 +526,4 @@ void loop() {
 
     atualizaMillis = millisAtual;
   }
-
 }
